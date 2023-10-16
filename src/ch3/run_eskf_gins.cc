@@ -18,7 +18,7 @@ DEFINE_double(antenna_angle, 12.06, "RTK天线安装偏角（角度）");
 DEFINE_double(antenna_pox_x, -0.17, "RTK天线安装偏移X");
 DEFINE_double(antenna_pox_y, -0.20, "RTK天线安装偏移Y");
 DEFINE_bool(with_ui, true, "是否显示图形界面");
-DEFINE_bool(with_odom, false, "是否加入轮速计信息");
+// DEFINE_bool(with_odom, false, "是否加入轮速计信息");
 
 /**
  * 本程序演示使用RTK+IMU进行组合导航
@@ -87,10 +87,10 @@ int main(int argc, char** argv) {
               return;
           }
 
-          if (!gnss_inited) {
-              /// 等待有效的RTK数据
-              return;
-          }
+        //   if (!gnss_inited) {
+        //       /// 等待有效的RTK数据
+        //       return;
+        //   }
 
           /// GNSS 也接收到之后，再开始进行预测
           eskf.Predict(imu);
@@ -106,39 +106,39 @@ int main(int argc, char** argv) {
 
           usleep(1e3);
       })
-        .SetGNSSProcessFunc([&](const sad::GNSS& gnss) {
-            /// GNSS 处理函数
-            if (!imu_inited) {
-                return;
-            }
+        // .SetGNSSProcessFunc([&](const sad::GNSS& gnss) {
+        //     /// GNSS 处理函数
+        //     if (!imu_inited) {
+        //         return;
+        //     }
 
-            sad::GNSS gnss_convert = gnss;
-            if (!sad::ConvertGps2UTM(gnss_convert, antenna_pos, FLAGS_antenna_angle) || !gnss_convert.heading_valid_) {
-                return;
-            }
+        //     sad::GNSS gnss_convert = gnss;
+        //     if (!sad::ConvertGps2UTM(gnss_convert, antenna_pos, FLAGS_antenna_angle) || !gnss_convert.heading_valid_) {
+        //         return;
+        //     }
 
-            /// 去掉原点
-            if (!first_gnss_set) {
-                origin = gnss_convert.utm_pose_.translation();
-                first_gnss_set = true;
-            }
-            gnss_convert.utm_pose_.translation() -= origin;
+        //     /// 去掉原点
+        //     if (!first_gnss_set) {
+        //         origin = gnss_convert.utm_pose_.translation();
+        //         first_gnss_set = true;
+        //     }
+        //     gnss_convert.utm_pose_.translation() -= origin;
 
-            // 要求RTK heading有效，才能合入ESKF
-            eskf.ObserveGps(gnss_convert);
+        //     // 要求RTK heading有效，才能合入ESKF
+        //     eskf.ObserveGps(gnss_convert);
 
-            auto state = eskf.GetNominalState();
-            if (ui) {
-                ui->UpdateNavState(state);
-            }
-            save_result(fout, state);
+        //     auto state = eskf.GetNominalState();
+        //     if (ui) {
+        //         ui->UpdateNavState(state);
+        //     }
+        //     save_result(fout, state);
 
-            gnss_inited = true;
-        })
+        //     gnss_inited = true;
+        // })
         .SetOdomProcessFunc([&](const sad::Odom& odom) {
             /// Odom 处理函数，本章Odom只给初始化使用
             imu_init.AddOdom(odom);
-            if (FLAGS_with_odom && imu_inited && gnss_inited) {
+            if (imu_inited) {
                 eskf.ObserveWheelSpeed(odom);
             }
         })

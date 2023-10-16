@@ -43,7 +43,7 @@ class ESKF {
         Options() = default;
 
         /// IMU 测量与零偏参数
-        double imu_dt_ = 0.01;  // IMU测量间隔
+        double imu_dt_ = 0.01;  // * IMU测量间隔  单位秒
         // NOTE IMU噪声项都为离散时间，不需要再乘dt，可以由初始化器指定IMU噪声
         double gyro_var_ = 1e-5;       // 陀螺测量标准差
         double acce_var_ = 1e-2;       // 加计测量标准差
@@ -52,9 +52,10 @@ class ESKF {
 
         /// 里程计参数
         double odom_var_ = 0.5;
-        double odom_span_ = 0.1;        // 里程计测量间隔
+        double odom_span_ = 0.01;        // *里程计测量间隔
         double wheel_radius_ = 0.155;   // 轮子半径
         double circle_pulse_ = 1024.0;  // 编码器每圈脉冲数
+        double dis_per_pulse_ = 0.0226963564; // * 单位 M
 
         /// RTK 观测参数
         double gnss_pos_noise_ = 0.1;                   // GNSS位置噪声
@@ -185,6 +186,7 @@ class ESKF {
 
     /// 成员变量
     double current_time_ = 0.0;  // 当前时间
+    // Odom last_odom_;    // * 记录上一帧 Odom
 
     /// 名义状态
     VecT p_ = VecT::Zero();
@@ -267,9 +269,14 @@ bool ESKF<S>::ObserveWheelSpeed(const Odom& odom) {
     Eigen::Matrix<S, 18, 3> K = cov_ * H.transpose() * (H * cov_ * H.transpose() + odom_noise_).inverse();
 
     // velocity obs
-    double velo_l = options_.wheel_radius_ * odom.left_pulse_ / options_.circle_pulse_ * 2 * M_PI / options_.odom_span_;
-    double velo_r =
-        options_.wheel_radius_ * odom.right_pulse_ / options_.circle_pulse_ * 2 * M_PI / options_.odom_span_;
+    // double velo_l = options_.wheel_radius_ * odom.left_pulse_ / options_.circle_pulse_ * 2 * M_PI / options_.odom_span_;
+    // double velo_r = options_.wheel_radius_ * odom.right_pulse_ / options_.circle_pulse_ * 2 * M_PI / options_.odom_span_;
+    
+    // double delta_time = odom.timestamp_ - last_odom_.timestamp_;
+
+    double velo_l = options_.dis_per_pulse_ * odom.left_pulse_ / options_.odom_span_;  // * 单位 m/s
+    double velo_r = options_.dis_per_pulse_ * odom.right_pulse_ / options_.odom_span_;
+    
     double average_vel = 0.5 * (velo_l + velo_r);
 
     VecT vel_odom(average_vel, 0.0, 0.0);

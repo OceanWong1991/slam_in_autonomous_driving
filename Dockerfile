@@ -4,11 +4,11 @@ ADD docker/sources.list /etc/apt
 
 RUN apt-get update \
 && apt-get install -y ros-noetic-pcl-ros ros-noetic-velodyne-msgs libopencv-dev libgoogle-glog-dev libeigen3-dev libsuitesparse-dev libpcl-dev libyaml-cpp-dev libbtbb-dev libgmock-dev unzip python3-tk\
-&& mkdir /sad
+&& mkdir /slam
 
-COPY ./thirdparty/ /sad/
+COPY ./thirdparty/ /slam/
 
-WORKDIR /sad/
+WORKDIR /slam/
 
 RUN ls -la \
 && rm -rf ./Pangolin \
@@ -19,4 +19,4 @@ RUN ls -la \
 # && cmake ./g2o -B ./g2o/build \
 # && make -j4 -C ./g2o/build install \
 && rm -rf /var/lib/apt/lists/* \
-&& rm -rf /sad
+&& rm -rf /slam
